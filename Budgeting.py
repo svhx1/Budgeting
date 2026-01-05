@@ -27,6 +27,32 @@ st.markdown(f"""
     /* Reset Geral */
     .stApp {{ background-color: {COR_FUNDO}; color: white; }}
 
+    /* --- 1. CONFIGURAÇÃO DAS ABAS (TABS) --- */
+    /* Cor do texto padrão */
+    .stTabs [data-baseweb="tab"] {{
+        color: {COR_TEXTO_SEC};
+        border: none;
+        font-weight: bold;
+    }}
+
+    /* Cor ao passar o mouse (HOVER) -> VERDE */
+    .stTabs [data-baseweb="tab"]:hover {{
+        color: {COR_KIWI} !important;
+    }}
+
+    /* Cor da aba selecionada -> VERDE */
+    .stTabs [aria-selected="true"] {{
+        color: {COR_KIWI} !important;
+        border-bottom: 2px solid {COR_KIWI} !important;
+    }}
+
+    /* --- 2. BARRA DE CARREGAMENTO (LOADING RUNNER) --- */
+    /* Aquela barrinha que corre no topo da tela */
+    .stDecoration {{
+        background-image: linear-gradient(90deg, {COR_KIWI}, {COR_VERMELHO});
+        height: 3px;
+    }}
+
     /* LOGO */
     .logo-text {{ 
         font-family: 'Helvetica Neue', sans-serif; 
@@ -38,27 +64,26 @@ st.markdown(f"""
         text-transform: uppercase;
     }}
 
-    /* Cards */
-    div[data-testid="stMetric"] {{ 
-        background-color: {COR_CARD}; 
-        border-radius: 6px; 
-        padding: 15px; 
-        border-left: 4px solid {COR_KIWI}; 
-    }}
-    div[data-testid="stMetricLabel"] {{ color: {COR_TEXTO_SEC}; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }}
-    div[data-testid="stMetricValue"] {{ color: white !important; font-size: 24px !important; }}
-
-    /* SALDO EM DESTAQUE */
-    .saldo-container {{
+    /* CARDS PERSONALIZADOS (Entradas/Saídas) */
+    .card-box {{
         background-color: {COR_CARD};
+        border-radius: 8px;
         padding: 20px;
-        border-radius: 10px;
         border: 1px solid #333;
-        text-align: center;
-        margin-bottom: 20px;
+        margin-bottom: 10px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3);
     }}
-    .saldo-label {{ color: {COR_TEXTO_SEC}; font-size: 14px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 5px; }}
-    .saldo-valor {{ font-size: 42px; font-weight: 900; letter-spacing: -1px; }}
+
+    /* Bordas Laterais Coloridas */
+    .border-green {{ border-left: 5px solid {COR_KIWI}; }}
+    .border-red {{ border-left: 5px solid {COR_VERMELHO}; }}
+
+    /* Barra Inferior Dinâmica (Saldo) */
+    .border-bottom-green {{ border-bottom: 5px solid {COR_KIWI}; }}
+    .border-bottom-red {{ border-bottom: 5px solid {COR_VERMELHO}; }}
+
+    .card-label {{ color: {COR_TEXTO_SEC}; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }}
+    .card-value {{ font-size: 28px; font-weight: bold; color: white; }}
 
     /* Inputs */
     .stTextInput>div>div>input, .stNumberInput>div>div>input, .stSelectbox>div>div>div, .stDateInput>div>div>input {{ 
@@ -74,7 +99,7 @@ st.markdown(f"""
         background-color: {COR_CARD};
         border: 1px solid #333;
         color: {COR_TEXTO_SEC};
-        font-size: 13px;
+        font-size: 14px;
         font-weight: 600;
     }}
 
@@ -92,7 +117,7 @@ st.markdown(f"""
     }}
     .stButton > button:hover {{ background-color: {COR_KIWI}; color: black; }}
 
-    /* Tooltip */
+    /* Tooltip do Gráfico */
     .plotly .hoverlayer .hovertext {{ 
         background-color: {COR_CARD} !important; 
         border: 1px solid {COR_KIWI} !important; 
@@ -393,20 +418,35 @@ tab_dash, tab_add, tab_ext, tab_conf = st.tabs(["DASHBOARD", "LANÇAMENTOS", "EX
 with tab_dash:
     # SALDO
     cor_saldo = COR_KIWI if saldo_mes >= 0 else COR_VERMELHO
+    classe_barra_saldo = "border-bottom-green" if saldo_mes >= 0 else "border-bottom-red"
+
     st.markdown(f"""
-        <div class="saldo-container">
-            <div class="saldo-label">Saldo Disponível (Mês)</div>
-            <div class="saldo-valor" style="color: {cor_saldo}">{fmt_moeda(saldo_mes)}</div>
-        </div>
+    <div class="card-box {classe_barra_saldo}" style="text-align:center;">
+        <div class="card-label">SALDO DISPONÍVEL (MÊS)</div>
+        <div class="card-value" style="color: {cor_saldo}; font-size: 40px;">{fmt_moeda(saldo_mes)}</div>
+    </div>
     """, unsafe_allow_html=True)
 
+    # ENTRADAS E SAÍDAS
     c_in, c_out = st.columns(2)
-    c_in.metric("Entradas", fmt_moeda(receitas_mes))
-    c_out.metric("Saídas", fmt_moeda(despesas_mes))
+    with c_in:
+        st.markdown(f"""
+        <div class="card-box border-green">
+            <div class="card-label">ENTRADAS</div>
+            <div class="card-value">{fmt_moeda(receitas_mes)}</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with c_out:
+        st.markdown(f"""
+        <div class="card-box border-red">
+            <div class="card-label">SAÍDAS</div>
+            <div class="card-value">{fmt_moeda(despesas_mes)}</div>
+        </div>
+        """, unsafe_allow_html=True)
 
     st.markdown("---")
 
-    # --- METAS (TETOS) ---
+    # METAS
     st.caption("LIMITES DE GASTOS")
     df_metas = get_metas_df()
 
@@ -417,7 +457,6 @@ with tab_dash:
                 categoria_meta = row['categoria']
                 teto = row['valor_teto']
 
-                # Gasto atual
                 gasto_atual = 0.0
                 df_cat_mes = pd.DataFrame()
                 if not df_filtrado.empty:
@@ -436,7 +475,6 @@ with tab_dash:
                     cor_texto = COR_VERMELHO
                     aviso = "LIMITE EXCEDIDO"
 
-                # Container Visual
                 st.markdown(f"""
                 <div style="background-color: #121212; padding: 15px; border-radius: 8px; border: 1px solid #333; margin-bottom: 5px;">
                     <div style="font-weight: bold; font-size: 14px; margin-bottom: 5px; color:{cor_barra}">{categoria_meta}</div>
@@ -454,7 +492,6 @@ with tab_dash:
                 </div>
                 """, unsafe_allow_html=True)
 
-                # --- EXTRATO DENTRO DO LIMITE ---
                 with st.expander("Ver Detalhes"):
                     if not df_cat_mes.empty:
                         df_sorted = df_cat_mes.sort_values(by="data_dt", ascending=False)
@@ -469,16 +506,14 @@ with tab_dash:
                             </div>
                             """, unsafe_allow_html=True)
                     else:
-                        st.caption("Sem gastos nesta categoria.")
-
+                        st.caption("Sem gastos.")
                 st.markdown("<div style='margin-bottom:20px'></div>", unsafe_allow_html=True)
-
     else:
         st.info("Sem limites definidos.")
 
     st.markdown("---")
 
-    # GRÁFICO E LISTA
+    # GRÁFICO
     if not df_filtrado.empty and despesas_mes > 0:
         c_graf, c_list = st.columns([1, 1])
         df_desp = df_filtrado[df_filtrado['tipo'] == 'Despesa'].copy()
@@ -534,40 +569,47 @@ with tab_dash:
     else:
         st.info("Sem despesas neste período.")
 
-# === ABA 2: LANÇAMENTOS ===
+# === ABA 2: LANÇAMENTOS (COM CALLBACK) ===
 with tab_add:
     st.subheader("Novo Registro")
+
+    if "lanc_valor" not in st.session_state: st.session_state.lanc_valor = 0.0
+    if "lanc_desc" not in st.session_state: st.session_state.lanc_desc = ""
+
+
+    def salvar_lancamento():
+        v_val = st.session_state.lanc_valor
+        v_desc = st.session_state.lanc_desc
+        v_cat = st.session_state.lanc_cat
+        v_tipo = st.session_state.lanc_tipo
+        v_data = st.session_state.lanc_data
+        v_rec = st.session_state.lanc_rec
+        v_qtd = st.session_state.get("lanc_qtd", 1)
+
+        if v_val > 0 and v_desc:
+            add_transacao_complexa(v_desc, v_val, v_cat, v_tipo, v_data, v_rec, v_qtd)
+            st.session_state.lanc_valor = 0.0
+            st.session_state.lanc_desc = ""
+            st.toast("Salvo com sucesso")
+        else:
+            st.toast("⚠️ Preencha valor e descrição.")
+
+
     col_esq, col_dir = st.columns(2)
-
     with col_esq:
-        data_sel = st.date_input("Data", value=datetime.now(), key="lanc_data")
-        tipo = st.selectbox("Tipo", ["Despesa", "Receita"], key="lanc_tipo")
-        recorrencia = st.selectbox("Recorrência", ["Único", "Parcelado", "Fixo (Mensal)"], key="lanc_rec")
-
-        qtd_parcelas = 1
-        if recorrencia == "Parcelado":
-            qtd_parcelas = st.number_input("Nº Parcelas", min_value=2, max_value=60, value=2, key="lanc_qtd")
+        st.date_input("Data", value=datetime.now(), key="lanc_data")
+        st.selectbox("Tipo", ["Despesa", "Receita"], key="lanc_tipo")
+        rec = st.selectbox("Recorrência", ["Único", "Parcelado", "Fixo (Mensal)"], key="lanc_rec")
+        if rec == "Parcelado":
+            st.number_input("Nº Parcelas", min_value=2, max_value=60, value=2, key="lanc_qtd")
 
     with col_dir:
-        val = st.number_input("Valor (R$)", min_value=0.0, step=0.01, format=None, key="lanc_val")
-        cat = st.selectbox("Categoria", list(cats_cores.keys()), key="lanc_cat")
-        desc = st.text_input("Descrição", placeholder="Ex: Supermercado", key="lanc_desc")
+        st.number_input("Valor (R$)", min_value=0.0, step=0.01, format=None, key="lanc_valor")
+        st.selectbox("Categoria", list(cats_cores.keys()), key="lanc_cat")
+        st.text_input("Descrição", placeholder="Ex: Supermercado", key="lanc_desc")
 
     st.markdown("<br>", unsafe_allow_html=True)
-    if st.button("SALVAR REGISTRO", type="primary"):
-        if val > 0 and desc:
-            add_transacao_complexa(desc, val, cat, tipo, data_sel, recorrencia, qtd_parcelas)
-            # RESET
-            st.session_state["lanc_val"] = 0.0
-            st.session_state["lanc_desc"] = ""
-            st.session_state["lanc_data"] = datetime.now()
-            st.session_state["lanc_tipo"] = "Despesa"
-            st.session_state["lanc_rec"] = "Único"
-            st.success("Salvo!");
-            time.sleep(0.5);
-            st.rerun()
-        else:
-            st.error("Preencha o valor e a descrição.")
+    st.button("SALVAR REGISTRO", type="primary", on_click=salvar_lancamento)
 
 # === ABA 3: EXTRATO ===
 with tab_ext:
