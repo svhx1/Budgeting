@@ -19,7 +19,8 @@ st.set_page_config(
 COR_FUNDO = "#000000"
 COR_CARD = "#121212"
 COR_KIWI = "#A3E635"
-COR_VERMELHO = "#CF6679"
+# NOVA COR: Vermelho Neon Forte para destaque no fundo preto
+COR_VERMELHO = "#FF3333"
 COR_TEXTO_SEC = "#B0B3B8"
 
 st.markdown(f"""
@@ -57,12 +58,12 @@ st.markdown(f"""
     }}
     .stTextInput>div>div>input:focus, .stNumberInput>div>div>input:focus {{ border-color: {COR_KIWI} !important; }}
 
-    /* Expander (A "Setinha") */
+    /* Expander Estilizado */
     .streamlit-expanderHeader {{
         background-color: {COR_CARD};
         border: 1px solid #333;
-        border-radius: 4px;
-        color: white;
+        color: {COR_TEXTO_SEC};
+        font-size: 13px;
     }}
 
     /* Botões */
@@ -329,7 +330,7 @@ saldo = receitas - despesas
 # --- 7. INTERFACE PRINCIPAL ---
 tab_dash, tab_add, tab_ext, tab_conf = st.tabs(["DASHBOARD", "LANÇAMENTOS", "EXTRATO", "CONFIGURAÇÕES"])
 
-# === ABA 1: DASHBOARD (ALTERNATIVA SETINHAS/EXPANDER) ===
+# === ABA 1: DASHBOARD ===
 with tab_dash:
     c1, c2, c3 = st.columns(3)
     c1.metric("Entradas", fmt_moeda(receitas))
@@ -361,32 +362,49 @@ with tab_dash:
             st.plotly_chart(fig, use_container_width=True)
 
         with c_list:
-            st.caption("DETALHAMENTO (CLIQUE NA SETA PARA ABRIR)")
+            st.caption("DETALHAMENTO POR CATEGORIA")
+            st.markdown("<br>", unsafe_allow_html=True)  # Espaço extra
 
-            # AQUI ESTÁ A SOLUÇÃO "SETINHA" (EXPANDER)
-            # Cria uma lista onde cada categoria é um botão expansível
+            # --- LISTA INTELIGENTE (INFO VISÍVEL + EXPANDER DETALHADO) ---
             for _, row in df_grouped.iterrows():
                 cat_nome = row['categoria']
                 cat_valor = row['valor']
                 cor = cats_cores.get(cat_nome, '#FFF')
+                percentual = (cat_valor / despesas) * 100 if despesas > 0 else 0
 
-                # Título do Expander com nome e valor total
-                label_expander = f"{cat_nome}  —  {fmt_moeda(cat_valor)}"
+                # 1. CABEÇALHO VISUAL (FORA DO EXPANDER)
+                # Mostra: Bolinha colorida, Nome, Valor (Vermelho forte)
+                c_inf, c_val = st.columns([3, 1])
+                with c_inf:
+                    st.markdown(
+                        f"<span style='color:{cor}; font-size:16px'>●</span> <span style='font-size:15px; font-weight:bold'>{cat_nome}</span>",
+                        unsafe_allow_html=True)
+                    st.progress(int(percentual))
+                with c_val:
+                    # VERMELHO FORTE AQUI (#FF3333)
+                    st.markdown(
+                        f"<div style='text-align:right; color:{COR_VERMELHO}; font-weight:bold; font-size:15px; padding-top:5px'>{fmt_moeda(cat_valor)}</div>",
+                        unsafe_allow_html=True)
 
-                with st.expander(label_expander):
-                    # Filtra apenas as compras dessa categoria
+                # 2. EXPANDER PARA ABRIR A LISTA
+                with st.expander("Ver transações"):
+                    # Filtra compras
                     df_cat_items = df_desp[df_desp['categoria'] == cat_nome].sort_values(by='data_dt', ascending=False)
 
-                    # Mostra lista limpa
                     for _, item in df_cat_items.iterrows():
                         col_desc, col_val = st.columns([3, 1])
                         with col_desc:
                             st.write(f"**{item['descricao']}**")
                             st.caption(f"{item['data_fmt']} • {item['hora_fmt']}")
                         with col_val:
-                            st.markdown(f"<div style='text-align:right; color:{cor}'>{fmt_moeda(item['valor'])}</div>",
-                                        unsafe_allow_html=True)
+                            # VERMELHO FORTE TAMBÉM NOS ITENS
+                            st.markdown(
+                                f"<div style='text-align:right; color:{COR_VERMELHO}; font-weight:500'>{fmt_moeda(item['valor'])}</div>",
+                                unsafe_allow_html=True)
                         st.markdown("<hr style='margin: 5px 0; border-color: #333;'>", unsafe_allow_html=True)
+
+                # Separador visual entre categorias
+                st.markdown("<div style='margin-bottom:25px'></div>", unsafe_allow_html=True)
 
     else:
         st.info("Sem dados neste período.")
