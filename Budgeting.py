@@ -16,33 +16,107 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- 2. ESTILO VISUAL ---
+# --- 2. ESTILO VISUAL (PRETO + KIWI) ---
 COR_FUNDO = "#000000"
 COR_CARD = "#121212"
 COR_KIWI = "#A3E635"
-COR_VERMELHO = "#FF3333"
+COR_VERMELHO = "#FF3333"  # Vermelho Neon
 COR_TEXTO_SEC = "#B0B3B8"
 
 st.markdown(f"""
     <style>
+    /* Reset Geral */
     .stApp {{ background-color: {COR_FUNDO}; color: white; }}
-    .logo-text {{ font-family: 'Helvetica Neue', sans-serif; font-size: 36px !important; font-weight: 900; color: {COR_KIWI}; letter-spacing: -1px; margin-bottom: 20px; text-transform: uppercase; }}
-    div[data-testid="stMetric"] {{ background-color: {COR_CARD}; border-radius: 6px; padding: 15px; border-left: 4px solid {COR_KIWI}; }}
+
+    /* LOGO */
+    .logo-text {{ 
+        font-family: 'Helvetica Neue', sans-serif; 
+        font-size: 36px !important; 
+        font-weight: 900; 
+        color: {COR_KIWI}; 
+        letter-spacing: -1px; 
+        margin-bottom: 20px; 
+        text-transform: uppercase;
+    }}
+
+    /* Cards */
+    div[data-testid="stMetric"] {{ 
+        background-color: {COR_CARD}; 
+        border-radius: 6px; 
+        padding: 15px; 
+        border-left: 4px solid {COR_KIWI}; 
+    }}
     div[data-testid="stMetricLabel"] {{ color: {COR_TEXTO_SEC}; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }}
     div[data-testid="stMetricValue"] {{ color: white !important; font-size: 24px !important; }}
-    .card-box {{ background-color: {COR_CARD}; border-radius: 8px; padding: 20px; border: 1px solid #333; margin-bottom: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }}
+
+    /* SALDO EM DESTAQUE */
+    .saldo-container {{
+        background-color: {COR_CARD};
+        padding: 20px;
+        border-radius: 10px;
+        border: 1px solid #333;
+        text-align: center;
+        margin-bottom: 20px;
+    }}
+    .saldo-label {{ color: {COR_TEXTO_SEC}; font-size: 14px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 5px; }}
+    .saldo-valor {{ font-size: 42px; font-weight: 900; letter-spacing: -1px; }}
+
+    /* CARDS PERSONALIZADOS (Entradas/Saídas) */
+    .card-box {{
+        background-color: {COR_CARD};
+        border-radius: 8px;
+        padding: 20px;
+        border: 1px solid #333;
+        margin-bottom: 10px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    }}
     .border-green {{ border-left: 5px solid {COR_KIWI}; }}
     .border-red {{ border-left: 5px solid {COR_VERMELHO}; }}
     .border-bottom-green {{ border-bottom: 5px solid {COR_KIWI}; }}
     .border-bottom-red {{ border-bottom: 5px solid {COR_VERMELHO}; }}
+
     .card-label {{ color: {COR_TEXTO_SEC}; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }}
     .card-value {{ font-size: 28px; font-weight: bold; color: white; }}
-    .stTextInput>div>div>input, .stNumberInput>div>div>input, .stSelectbox>div>div>div, .stDateInput>div>div>input {{ background-color: {COR_CARD} !important; color: white !important; border: 1px solid #333; border-radius: 4px; }}
+
+    /* Inputs */
+    .stTextInput>div>div>input, .stNumberInput>div>div>input, .stSelectbox>div>div>div, .stDateInput>div>div>input {{ 
+        background-color: {COR_CARD} !important; 
+        color: white !important; 
+        border: 1px solid #333; 
+        border-radius: 4px; 
+    }}
     .stTextInput>div>div>input:focus, .stNumberInput>div>div>input:focus {{ border-color: {COR_KIWI} !important; }}
-    .streamlit-expanderHeader {{ background-color: {COR_CARD}; border: 1px solid #333; color: {COR_TEXTO_SEC}; font-size: 14px; font-weight: 600; }}
-    .stButton > button {{ background-color: transparent; color: {COR_KIWI}; border: 1px solid {COR_KIWI}; border-radius: 4px; font-weight: 600; text-transform: uppercase; font-size: 11px; letter-spacing: 1px; transition: all 0.3s; }}
+
+    /* Expander */
+    .streamlit-expanderHeader {{
+        background-color: {COR_CARD};
+        border: 1px solid #333;
+        color: {COR_TEXTO_SEC};
+        font-size: 14px;
+        font-weight: 600;
+    }}
+
+    /* Botões */
+    .stButton > button {{ 
+        background-color: transparent; 
+        color: {COR_KIWI}; 
+        border: 1px solid {COR_KIWI}; 
+        border-radius: 4px; 
+        font-weight: 600; 
+        text-transform: uppercase; 
+        font-size: 11px; 
+        letter-spacing: 1px; 
+        transition: all 0.3s;
+    }}
     .stButton > button:hover {{ background-color: {COR_KIWI}; color: black; }}
-    .plotly .hoverlayer .hovertext {{ background-color: {COR_CARD} !important; border: 1px solid {COR_KIWI} !important; font-family: sans-serif; color: white !important; }}
+
+    /* Tooltip */
+    .plotly .hoverlayer .hovertext {{ 
+        background-color: {COR_CARD} !important; 
+        border: 1px solid {COR_KIWI} !important; 
+        font-family: sans-serif; 
+        color: white !important;
+    }}
 
     /* Configuração Abas */
     .stTabs [data-baseweb="tab"] {{ color: {COR_TEXTO_SEC}; border: none; font-weight: bold; }}
@@ -52,9 +126,12 @@ st.markdown(f"""
     </style>
 """, unsafe_allow_html=True)
 
-# --- 3. CONEXÃO COM BANCO DE DADOS (POSTGRESQL) ---
-# Usando a conexão nativa do Streamlit com Secrets
-conn = st.connection("postgresql", type="sql")
+# --- 3. CONEXÃO COM BANCO DE DADOS (POSTGRESQL - NUVEM) ---
+try:
+    conn = st.connection("postgresql", type="sql")
+except Exception:
+    st.error("Erro de conexão com o banco de dados. Verifique os 'Secrets' no Streamlit Cloud.")
+    st.stop()
 
 
 def run_query(query, params=None):
@@ -69,11 +146,11 @@ def run_query(query, params=None):
 
 def get_data(query, params=None):
     """Busca dados e retorna DataFrame"""
-    return conn.query(query, params=params, ttl=0)  # ttl=0 desativa cache para dados sempre frescos
+    return conn.query(query, params=params, ttl=0)
 
 
 def init_db():
-    # Criação de tabelas adaptada para PostgreSQL (SERIAL em vez de AUTOINCREMENT)
+    # Criação de tabelas adaptada para PostgreSQL
     run_query("""
               CREATE TABLE IF NOT EXISTS transacoes
               (
@@ -126,23 +203,26 @@ def init_db():
               );
               """)
 
-    # Categorias Padrão
-    res = get_data("SELECT count(*) as cnt FROM categorias")
-    if res.iloc[0]['cnt'] == 0:
-        cats_padrao = [
-            {"nome": "Alimentação", "cor": "#FF5733"}, {"nome": "Transporte", "cor": "#33FF57"},
-            {"nome": "Moradia", "cor": "#3357FF"}, {"nome": "Lazer", "cor": "#FF33A8"},
-            {"nome": "Saúde", "cor": "#33FFF5"}, {"nome": "Salário", "cor": "#A3E635"},
-            {"nome": "Outros", "cor": "#B0B3B8"}
-        ]
-        for cat in cats_padrao:
-            run_query("INSERT INTO categorias (nome, cor) VALUES (:nome, :cor)", cat)
+    # Categorias Padrão (Verifica se tabela está vazia)
+    try:
+        res = get_data("SELECT count(*) as cnt FROM categorias")
+        if res.iloc[0]['cnt'] == 0:
+            cats_padrao = [
+                {"nome": "Alimentação", "cor": "#FF5733"}, {"nome": "Transporte", "cor": "#33FF57"},
+                {"nome": "Moradia", "cor": "#3357FF"}, {"nome": "Lazer", "cor": "#FF33A8"},
+                {"nome": "Saúde", "cor": "#33FFF5"}, {"nome": "Salário", "cor": "#A3E635"},
+                {"nome": "Outros", "cor": "#B0B3B8"}
+            ]
+            for cat in cats_padrao:
+                run_query("INSERT INTO categorias (nome, cor) VALUES (:nome, :cor)", cat)
+    except Exception:
+        pass  # Evita erro na primeira execução se a tabela não existir ainda
 
 
 init_db()
 
 
-# --- FUNÇÕES CORE ---
+# --- FUNÇÕES CORE (ADAPTADAS PARA SQL) ---
 def add_transacao_complexa(desc, valor, cat, tipo, data_obj, recorrencia, qtd_parcelas=1):
     group_id = f"{int(time.time())}_{random.randint(1000, 9999)}"
 
@@ -190,6 +270,7 @@ def limpar_transacoes():
 # --- Categorias ---
 def get_categorias_dict():
     df = get_data("SELECT nome, cor FROM categorias ORDER BY nome ASC")
+    if df.empty: return {}
     return dict(zip(df.nome, df.cor))
 
 
@@ -311,6 +392,7 @@ tab_dash, tab_add, tab_ext, tab_conf = st.tabs(["DASHBOARD", "LANÇAMENTOS", "EX
 
 # === ABA 1: DASHBOARD ===
 with tab_dash:
+    # SALDO (Cards HTML Personalizados)
     cor_saldo = COR_KIWI if saldo_mes >= 0 else COR_VERMELHO
     classe_barra_saldo = "border-bottom-green" if saldo_mes >= 0 else "border-bottom-red"
 
