@@ -1,11 +1,12 @@
 import streamlit as st
-import sqlite3
 import pandas as pd
 import plotly.graph_objects as go
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 import time
 import random
+import sqlalchemy
+from sqlalchemy import text
 
 # --- 1. CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(
@@ -15,135 +16,71 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- 2. ESTILO VISUAL (PRETO + KIWI) ---
+# --- 2. ESTILO VISUAL ---
 COR_FUNDO = "#000000"
 COR_CARD = "#121212"
 COR_KIWI = "#A3E635"
-COR_VERMELHO = "#FF3333"  # Vermelho Neon
+COR_VERMELHO = "#FF3333"
 COR_TEXTO_SEC = "#B0B3B8"
 
 st.markdown(f"""
     <style>
-    /* Reset Geral */
     .stApp {{ background-color: {COR_FUNDO}; color: white; }}
-
-    /* --- 1. CONFIGURAÇÃO DAS ABAS (TABS) --- */
-    /* Cor do texto padrão */
-    .stTabs [data-baseweb="tab"] {{
-        color: {COR_TEXTO_SEC};
-        border: none;
-        font-weight: bold;
-    }}
-
-    /* Cor ao passar o mouse (HOVER) -> VERDE */
-    .stTabs [data-baseweb="tab"]:hover {{
-        color: {COR_KIWI} !important;
-    }}
-
-    /* Cor da aba selecionada -> VERDE */
-    .stTabs [aria-selected="true"] {{
-        color: {COR_KIWI} !important;
-        border-bottom: 2px solid {COR_KIWI} !important;
-    }}
-
-    /* --- 2. BARRA DE CARREGAMENTO (LOADING RUNNER) --- */
-    /* Aquela barrinha que corre no topo da tela */
-    .stDecoration {{
-        background-image: linear-gradient(90deg, {COR_KIWI}, {COR_VERMELHO});
-        height: 3px;
-    }}
-
-    /* LOGO */
-    .logo-text {{ 
-        font-family: 'Helvetica Neue', sans-serif; 
-        font-size: 36px !important; 
-        font-weight: 900; 
-        color: {COR_KIWI}; 
-        letter-spacing: -1px; 
-        margin-bottom: 20px; 
-        text-transform: uppercase;
-    }}
-
-    /* CARDS PERSONALIZADOS (Entradas/Saídas) */
-    .card-box {{
-        background-color: {COR_CARD};
-        border-radius: 8px;
-        padding: 20px;
-        border: 1px solid #333;
-        margin-bottom: 10px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-    }}
-
-    /* Bordas Laterais Coloridas */
+    .logo-text {{ font-family: 'Helvetica Neue', sans-serif; font-size: 36px !important; font-weight: 900; color: {COR_KIWI}; letter-spacing: -1px; margin-bottom: 20px; text-transform: uppercase; }}
+    div[data-testid="stMetric"] {{ background-color: {COR_CARD}; border-radius: 6px; padding: 15px; border-left: 4px solid {COR_KIWI}; }}
+    div[data-testid="stMetricLabel"] {{ color: {COR_TEXTO_SEC}; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }}
+    div[data-testid="stMetricValue"] {{ color: white !important; font-size: 24px !important; }}
+    .card-box {{ background-color: {COR_CARD}; border-radius: 8px; padding: 20px; border: 1px solid #333; margin-bottom: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }}
     .border-green {{ border-left: 5px solid {COR_KIWI}; }}
     .border-red {{ border-left: 5px solid {COR_VERMELHO}; }}
-
-    /* Barra Inferior Dinâmica (Saldo) */
     .border-bottom-green {{ border-bottom: 5px solid {COR_KIWI}; }}
     .border-bottom-red {{ border-bottom: 5px solid {COR_VERMELHO}; }}
-
     .card-label {{ color: {COR_TEXTO_SEC}; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }}
     .card-value {{ font-size: 28px; font-weight: bold; color: white; }}
-
-    /* Inputs */
-    .stTextInput>div>div>input, .stNumberInput>div>div>input, .stSelectbox>div>div>div, .stDateInput>div>div>input {{ 
-        background-color: {COR_CARD} !important; 
-        color: white !important; 
-        border: 1px solid #333; 
-        border-radius: 4px; 
-    }}
+    .stTextInput>div>div>input, .stNumberInput>div>div>input, .stSelectbox>div>div>div, .stDateInput>div>div>input {{ background-color: {COR_CARD} !important; color: white !important; border: 1px solid #333; border-radius: 4px; }}
     .stTextInput>div>div>input:focus, .stNumberInput>div>div>input:focus {{ border-color: {COR_KIWI} !important; }}
-
-    /* Expander */
-    .streamlit-expanderHeader {{
-        background-color: {COR_CARD};
-        border: 1px solid #333;
-        color: {COR_TEXTO_SEC};
-        font-size: 14px;
-        font-weight: 600;
-    }}
-
-    /* Botões */
-    .stButton > button {{ 
-        background-color: transparent; 
-        color: {COR_KIWI}; 
-        border: 1px solid {COR_KIWI}; 
-        border-radius: 4px; 
-        font-weight: 600; 
-        text-transform: uppercase; 
-        font-size: 11px; 
-        letter-spacing: 1px; 
-        transition: all 0.3s;
-    }}
+    .streamlit-expanderHeader {{ background-color: {COR_CARD}; border: 1px solid #333; color: {COR_TEXTO_SEC}; font-size: 14px; font-weight: 600; }}
+    .stButton > button {{ background-color: transparent; color: {COR_KIWI}; border: 1px solid {COR_KIWI}; border-radius: 4px; font-weight: 600; text-transform: uppercase; font-size: 11px; letter-spacing: 1px; transition: all 0.3s; }}
     .stButton > button:hover {{ background-color: {COR_KIWI}; color: black; }}
+    .plotly .hoverlayer .hovertext {{ background-color: {COR_CARD} !important; border: 1px solid {COR_KIWI} !important; font-family: sans-serif; color: white !important; }}
 
-    /* Tooltip do Gráfico */
-    .plotly .hoverlayer .hovertext {{ 
-        background-color: {COR_CARD} !important; 
-        border: 1px solid {COR_KIWI} !important; 
-        font-family: sans-serif; 
-        color: white !important;
-    }}
+    /* Configuração Abas */
+    .stTabs [data-baseweb="tab"] {{ color: {COR_TEXTO_SEC}; border: none; font-weight: bold; }}
+    .stTabs [data-baseweb="tab"]:hover {{ color: {COR_KIWI} !important; }}
+    .stTabs [aria-selected="true"] {{ color: {COR_KIWI} !important; border-bottom: 2px solid {COR_KIWI} !important; }}
+    .stDecoration {{ background-image: linear-gradient(90deg, {COR_KIWI}, {COR_VERMELHO}); height: 3px; }}
     </style>
 """, unsafe_allow_html=True)
 
+# --- 3. CONEXÃO COM BANCO DE DADOS (POSTGRESQL) ---
+# Usando a conexão nativa do Streamlit com Secrets
+conn = st.connection("postgresql", type="sql")
 
-# --- 3. BANCO DE DADOS ---
-def get_conn():
-    return sqlite3.connect("budgeting_pro.db")
+
+def run_query(query, params=None):
+    """Executa query SQL de forma segura usando SQLAlchemy"""
+    with conn.session as session:
+        if params:
+            session.execute(text(query), params)
+        else:
+            session.execute(text(query))
+        session.commit()
+
+
+def get_data(query, params=None):
+    """Busca dados e retorna DataFrame"""
+    return conn.query(query, params=params, ttl=0)  # ttl=0 desativa cache para dados sempre frescos
 
 
 def init_db():
-    conn = get_conn()
-    c = conn.cursor()
-    c.execute("""
+    # Criação de tabelas adaptada para PostgreSQL (SERIAL em vez de AUTOINCREMENT)
+    run_query("""
               CREATE TABLE IF NOT EXISTS transacoes
               (
                   id
-                  INTEGER
+                  SERIAL
                   PRIMARY
-                  KEY
-                  AUTOINCREMENT,
+                  KEY,
                   descricao
                   TEXT,
                   valor
@@ -158,58 +95,63 @@ def init_db():
                   TEXT,
                   parcela_info
                   TEXT
-              )
+              );
               """)
-    c.execute("""
+    run_query("""
               CREATE TABLE IF NOT EXISTS categorias
               (
                   id
-                  INTEGER
+                  SERIAL
                   PRIMARY
-                  KEY
-                  AUTOINCREMENT,
+                  KEY,
                   nome
                   TEXT
                   UNIQUE,
                   cor
                   TEXT
-              )
+              );
               """)
-    c.execute("""
+    run_query("""
               CREATE TABLE IF NOT EXISTS metas
               (
                   id
-                  INTEGER
+                  SERIAL
                   PRIMARY
-                  KEY
-                  AUTOINCREMENT,
+                  KEY,
                   categoria
                   TEXT
                   UNIQUE,
                   valor_teto
                   REAL
-              )
+              );
               """)
-    c.execute("SELECT count(*) FROM categorias")
-    if c.fetchone()[0] == 0:
-        cats_padrao = [("Alimentação", "#FF5733"), ("Transporte", "#33FF57"), ("Moradia", "#3357FF"),
-                       ("Lazer", "#FF33A8"), ("Saúde", "#33FFF5"), ("Salário", "#A3E635"), ("Outros", "#B0B3B8")]
-        c.executemany("INSERT INTO categorias (nome, cor) VALUES (?, ?)", cats_padrao)
-    conn.commit()
-    conn.close()
+
+    # Categorias Padrão
+    res = get_data("SELECT count(*) as cnt FROM categorias")
+    if res.iloc[0]['cnt'] == 0:
+        cats_padrao = [
+            {"nome": "Alimentação", "cor": "#FF5733"}, {"nome": "Transporte", "cor": "#33FF57"},
+            {"nome": "Moradia", "cor": "#3357FF"}, {"nome": "Lazer", "cor": "#FF33A8"},
+            {"nome": "Saúde", "cor": "#33FFF5"}, {"nome": "Salário", "cor": "#A3E635"},
+            {"nome": "Outros", "cor": "#B0B3B8"}
+        ]
+        for cat in cats_padrao:
+            run_query("INSERT INTO categorias (nome, cor) VALUES (:nome, :cor)", cat)
+
+
+init_db()
 
 
 # --- FUNÇÕES CORE ---
 def add_transacao_complexa(desc, valor, cat, tipo, data_obj, recorrencia, qtd_parcelas=1):
-    conn = get_conn()
-    c = conn.cursor()
     group_id = f"{int(time.time())}_{random.randint(1000, 9999)}"
 
     if recorrencia == "Único":
         dt_str = datetime.now().strftime(f"{data_obj} %H:%M:%S")
-        c.execute(
-            "INSERT INTO transacoes (descricao, valor, categoria, tipo, data_str, group_id, parcela_info) VALUES (?, ?, ?, ?, ?, ?, ?)",
-            (desc, valor, cat, tipo, dt_str, group_id, None))
+        run_query(
+            "INSERT INTO transacoes (descricao, valor, categoria, tipo, data_str, group_id, parcela_info) VALUES (:d, :v, :c, :t, :dt, :g, :p)",
+            {"d": desc, "v": valor, "c": cat, "t": tipo, "dt": dt_str, "g": group_id, "p": None})
+
     elif recorrencia == "Parcelado":
         valor_parcela = valor / qtd_parcelas
         for i in range(qtd_parcelas):
@@ -217,132 +159,87 @@ def add_transacao_complexa(desc, valor, cat, tipo, data_obj, recorrencia, qtd_pa
             dt_str = datetime.now().strftime(f"{data_futura} %H:%M:%S")
             info = f"{i + 1}/{qtd_parcelas}"
             desc_final = f"{desc} ({info})"
-            c.execute(
-                "INSERT INTO transacoes (descricao, valor, categoria, tipo, data_str, group_id, parcela_info) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                (desc_final, valor_parcela, cat, tipo, dt_str, group_id, info))
+            run_query(
+                "INSERT INTO transacoes (descricao, valor, categoria, tipo, data_str, group_id, parcela_info) VALUES (:d, :v, :c, :t, :dt, :g, :p)",
+                {"d": desc_final, "v": valor_parcela, "c": cat, "t": tipo, "dt": dt_str, "g": group_id, "p": info})
+
     elif recorrencia == "Fixo (Mensal)":
         for i in range(12):
             data_futura = data_obj + relativedelta(months=i)
             dt_str = datetime.now().strftime(f"{data_futura} %H:%M:%S")
-            c.execute(
-                "INSERT INTO transacoes (descricao, valor, categoria, tipo, data_str, group_id, parcela_info) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                (desc, valor, cat, tipo, dt_str, group_id, "Fixo"))
-    conn.commit()
-    conn.close()
+            run_query(
+                "INSERT INTO transacoes (descricao, valor, categoria, tipo, data_str, group_id, parcela_info) VALUES (:d, :v, :c, :t, :dt, :g, :p)",
+                {"d": desc, "v": valor, "c": cat, "t": tipo, "dt": dt_str, "g": group_id, "p": "Fixo"})
 
 
 def delete_transacao(id_transacao, delete_group=False, group_id=None):
-    conn = get_conn()
-    c = conn.cursor()
     if delete_group and group_id:
-        c.execute("DELETE FROM transacoes WHERE group_id = ?", (group_id,))
+        run_query("DELETE FROM transacoes WHERE group_id = :gid", {"gid": group_id})
     else:
-        c.execute("DELETE FROM transacoes WHERE id = ?", (id_transacao,))
-    conn.commit()
-    conn.close()
+        run_query("DELETE FROM transacoes WHERE id = :id", {"id": id_transacao})
 
 
 def get_transacoes():
-    conn = get_conn()
-    df = pd.read_sql_query("SELECT * FROM transacoes", conn)
-    conn.close()
-    return df
+    return get_data("SELECT * FROM transacoes")
 
 
 def limpar_transacoes():
-    conn = get_conn()
-    conn.execute("DELETE FROM transacoes")
-    conn.commit()
-    conn.close()
+    run_query("DELETE FROM transacoes")
 
 
-# --- Funções Categoria ---
+# --- Categorias ---
 def get_categorias_dict():
-    conn = get_conn()
-    c = conn.cursor()
-    c.execute("SELECT nome, cor FROM categorias ORDER BY nome ASC")
-    data = c.fetchall()
-    conn.close()
-    return {nome: cor for nome, cor in data}
+    df = get_data("SELECT nome, cor FROM categorias ORDER BY nome ASC")
+    return dict(zip(df.nome, df.cor))
 
 
 def get_categorias_df():
-    conn = get_conn()
-    df = pd.read_sql_query("SELECT * FROM categorias ORDER BY nome ASC", conn)
-    conn.close()
-    return df
+    return get_data("SELECT * FROM categorias ORDER BY nome ASC")
 
 
 def add_categoria(nova_cat, nova_cor):
-    conn = get_conn()
-    c = conn.cursor()
     try:
-        c.execute("INSERT INTO categorias (nome, cor) VALUES (?, ?)", (nova_cat, nova_cor))
-        conn.commit()
-        sucesso = True
+        run_query("INSERT INTO categorias (nome, cor) VALUES (:n, :c)", {"n": nova_cat, "c": nova_cor})
+        return True
     except:
-        sucesso = False
-    conn.close()
-    return sucesso
+        return False
 
 
 def update_categoria(id_cat, novo_nome, nova_cor, nome_antigo):
-    conn = get_conn()
-    c = conn.cursor()
     try:
-        c.execute("UPDATE categorias SET nome = ?, cor = ? WHERE id = ?", (novo_nome, nova_cor, id_cat))
+        run_query("UPDATE categorias SET nome = :n, cor = :c WHERE id = :id",
+                  {"n": novo_nome, "c": nova_cor, "id": id_cat})
         if novo_nome != nome_antigo:
-            c.execute("UPDATE transacoes SET categoria = ? WHERE categoria = ?", (novo_nome, nome_antigo))
-            c.execute("UPDATE metas SET categoria = ? WHERE categoria = ?", (novo_nome, nome_antigo))
-        conn.commit()
-        sucesso = True
+            run_query("UPDATE transacoes SET categoria = :n WHERE categoria = :o", {"n": novo_nome, "o": nome_antigo})
+            run_query("UPDATE metas SET categoria = :n WHERE categoria = :o", {"n": novo_nome, "o": nome_antigo})
+        return True
     except:
-        sucesso = False
-    conn.close()
-    return sucesso
+        return False
 
 
 def delete_categoria(id_cat):
-    conn = get_conn()
-    conn.execute("DELETE FROM categorias WHERE id = ?", (id_cat,))
-    conn.commit()
-    conn.close()
+    run_query("DELETE FROM categorias WHERE id = :id", {"id": id_cat})
 
 
-# --- Funções Metas ---
+# --- Metas ---
 def add_meta(categoria, valor_teto):
-    conn = get_conn()
-    c = conn.cursor()
     try:
-        c.execute("INSERT INTO metas (categoria, valor_teto) VALUES (?, ?)", (categoria, valor_teto))
-        conn.commit()
-        sucesso = True
+        run_query("INSERT INTO metas (categoria, valor_teto) VALUES (:c, :v)", {"c": categoria, "v": valor_teto})
+        return True
     except:
-        sucesso = False
-    conn.close()
-    return sucesso
+        return False
 
 
 def update_meta(id_meta, novo_valor):
-    conn = get_conn()
-    c = conn.cursor()
-    c.execute("UPDATE metas SET valor_teto = ? WHERE id = ?", (novo_valor, id_meta))
-    conn.commit()
-    conn.close()
+    run_query("UPDATE metas SET valor_teto = :v WHERE id = :id", {"v": novo_valor, "id": id_meta})
 
 
 def get_metas_df():
-    conn = get_conn()
-    df = pd.read_sql_query("SELECT * FROM metas", conn)
-    conn.close()
-    return df
+    return get_data("SELECT * FROM metas")
 
 
 def delete_meta(id_meta):
-    conn = get_conn()
-    conn.execute("DELETE FROM metas WHERE id = ?", (id_meta,))
-    conn.commit()
-    conn.close()
+    run_query("DELETE FROM metas WHERE id = :id", {"id": id_meta})
 
 
 def gerar_fake_data():
@@ -360,8 +257,6 @@ def gerar_fake_data():
         add_transacao_complexa(desc, val, cat, "Despesa", dt_obj, "Único")
     if "Alimentação" in cats_nomes: add_meta("Alimentação", 1000.0)
 
-
-init_db()
 
 # --- 4. UTILITÁRIOS ---
 if 'privacy' not in st.session_state: st.session_state.privacy = False
@@ -416,7 +311,6 @@ tab_dash, tab_add, tab_ext, tab_conf = st.tabs(["DASHBOARD", "LANÇAMENTOS", "EX
 
 # === ABA 1: DASHBOARD ===
 with tab_dash:
-    # SALDO
     cor_saldo = COR_KIWI if saldo_mes >= 0 else COR_VERMELHO
     classe_barra_saldo = "border-bottom-green" if saldo_mes >= 0 else "border-bottom-red"
 
@@ -427,7 +321,6 @@ with tab_dash:
     </div>
     """, unsafe_allow_html=True)
 
-    # ENTRADAS E SAÍDAS
     c_in, c_out = st.columns(2)
     with c_in:
         st.markdown(f"""
@@ -476,7 +369,7 @@ with tab_dash:
                     aviso = "LIMITE EXCEDIDO"
 
                 st.markdown(f"""
-                <div style="background-color: #121212; padding: 15px; border-radius: 8px; border: 1px solid #333; margin-bottom: 5px;">
+                <div style="background-color: #121212; padding: 15px; border-radius: 8px; border: 1px solid #333; margin-bottom: 15px;">
                     <div style="font-weight: bold; font-size: 14px; margin-bottom: 5px; color:{cor_barra}">{categoria_meta}</div>
                     <div style="font-size: 12px; color: #999; display: flex; justify-content: space-between;">
                         <span>Gasto: {fmt_moeda(gasto_atual)}</span>
@@ -569,10 +462,9 @@ with tab_dash:
     else:
         st.info("Sem despesas neste período.")
 
-# === ABA 2: LANÇAMENTOS (COM CALLBACK) ===
+# === ABA 2: LANÇAMENTOS ===
 with tab_add:
     st.subheader("Novo Registro")
-
     if "lanc_valor" not in st.session_state: st.session_state.lanc_valor = 0.0
     if "lanc_desc" not in st.session_state: st.session_state.lanc_desc = ""
 
@@ -590,7 +482,7 @@ with tab_add:
             add_transacao_complexa(v_desc, v_val, v_cat, v_tipo, v_data, v_rec, v_qtd)
             st.session_state.lanc_valor = 0.0
             st.session_state.lanc_desc = ""
-            st.toast("Salvo com sucesso")
+            st.toast("✅ Salvo com sucesso!")
         else:
             st.toast("⚠️ Preencha valor e descrição.")
 
@@ -621,7 +513,6 @@ with tab_ext:
                 c_icon, c_info, c_val, c_del = st.columns([0.5, 4, 2, 1])
                 sinal = "+" if row['tipo'] == 'Receita' else "-"
                 cor_sinal = COR_KIWI if row['tipo'] == 'Receita' else COR_VERMELHO
-
                 with c_icon:
                     st.markdown(f"<span style='color:{cor_sinal}; font-size:20px; font-weight:bold'>{sinal}</span>",
                                 unsafe_allow_html=True)
